@@ -21,3 +21,26 @@ def carregar_variaveis() -> dict:
         "maximo_token": int(os.getenv("LLM_MAX_TOKENS", "200")),
         "timeout": float(os.getenv("LLM_TIMEOUT", "30")),
     }
+
+def enviar_prompts(prompt: str) -> str:
+
+    config = carregar_variaveis()
+    url = config["base_url"].rstrip("/") + "/" + config["path"].lstrip("/")
+    header = {}
+    if config["api_key"]:
+        header["Authorization"] = f"Bearer {config['api_key']}"
+    body = {
+        "model": config["modelo"],
+        "messages": [
+            {"role": "system", "content": PROMPT_LLM},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": config["temperatura"],
+        "max_tokens": config["maximo_token"],
+    }
+
+    resposta = requests.post(url, headers=header, json=body, timeout=config["timeout"])
+    resposta.raise_for_status()
+
+    dados = resposta.json()
+    return dados["choices"][0]["message"]["content"]
